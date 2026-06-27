@@ -2,6 +2,37 @@
 
 ## Notes
 
+### The Whole Pipeline
+```
+bootloader.s (your code)
+    ↓
+[Assembler]
+    ↓
+bootloader.o (machine code + placeholders)
+
+kernel.c (your code)
+    ↓
+[Compiler]
+    ↓
+kernel.o (machine code + placeholders)
+
+bootloader.o + kernel.o + linker.ld
+    ↓
+[Linker]
+(decides all addresses, fills in placeholders)
+    ↓
+kernel.elf (executable with all symbols resolved)
+
+kernel.elf
+    ↓
+[Objcopy]
+(strip debug info, convert to binary)
+    ↓
+kernel8.img (pure machine code)
+
+kernel8.img → copied to Pi → GPU loads at 0x80000 → CPU executes
+```
+
 ### Memory Layout
 * 0x80000 to 0x100000 --> bootloader code
 * 0x80010000 --> stack, growing downward (pushing makes sp go to a lower address but has bigger number)
@@ -33,22 +64,62 @@
 ENTRY(_start) ; Start execution at _start label
 
 MEMORY {
-    FLASH : ORIGIN = 0x80000, LENGTH = 32M ; bootloader starts at address 0x80000
+    FLASH : ORIGIN = 0x80000, LENGTH = 32M ; bootloader starts at address 0x80000, memory region called FLASH starting at 0x80000 and extends 32 MB
 }
 
 SECTIONS {
-    .text.boot : { ; bootloader (.text.boot) code goes first
+    .text.boot : { ; bootloader (.text.boot) code goes first, put all .text.boot sections from the object file in FLASH memory
         *(.text.boot) 
-    }
+    } > FLASH
 
     .text : { ; all other (.text) code goes after
         *(.text) 
-    }
+    } > FLASH
 
-    .bss : { ; define __bss_start__ and __bss_end__ symbols, bootloader uses these symbols to clear BSS
+    .bss : { ; define __bss_start__ and __bss_end__ symbols, bootloader uses these symbols to clear BSS, __bss_start___ is a linker symbol that euals the current address (bootload code does ldr r0, =__bss_start__ and linker replaces it with actual address)
         __bss_start__ = .; 
         *(.bss)
         __bss_end__ = .;
-    }
+    } > FLASH
 }
 ```
+
+```
+*** NOTE: FLASH is a type of memory that is a non-volatile electric computer storage. It retains power even without power. It consists of millions of tiny transisters that trap electrions to represent binary code. FLASH memory stores bootloader code to allow device to boot up safely and launch the primary OS***
+```
+
+*  when writing code the __written code__ (bootloader.s, kernel.c) is sent to the __compiler/assembler__ which producesses __object files__ (.o files) and sends them to the __linker__ to produce __executable files__ (kernel.elf, kernel8.img, etc) which are executed by the __CPU__
+    * assembler translates code into machine code (CPU instructions) but assembler doesn't know where anything is in memory (ex: assembler sees `bl main` but doesn't know what address `main` is at so assembler adds placeholder)
+    * object file (.o file) has machine code with placeholders and a symbol table with labels/functions without addresses yet; include relocation information to fix placeholders later
+    * linker stitches object file into one executable
+        1. decide where everything goes in memory
+        2. fill in placeholders with real addresses
+        3. resolve symboles
+        4. create final executable 
+    * linker script helps decide where `ORIGIN` is (where bootloader goes) which helps fill in placeholders
+    * linker script tells linker how to arrange code in memory (`SECTIONS`)
+* BSS = BLock Stated by Symbol
+    * region that stores uninitialized global variables (does not have initial value)
+    * when you compile, compiler doesn't store the values for the variables in the executable but it reserves space in memory for the variable, it contains garbage data when program initially loads
+    * bootloader needs to zero out the garbage so programmer doesn't need to
+
+## Checklist
+
+- [ ] Start with .section and .global directives
+- [ ] Create _start: label
+- [ ] Switch to Thumb mode using ldr and bx
+- [ ] Disable interrupts using cpsid
+- [ ] Load stack pointer to 0x80010000
+- [ ] Clear BSS section with a loop:
+    - [ ] Load __bss_start__ into r0
+    - [ ] Load __bss_end__ into r1
+    - [ ] Move 0 into r2
+    - [ ] Create a loop label
+    - [ ] Compare r0 and r1
+    - [ ] Branch if equal to done label
+    - [ ] Store r2 at address in r0
+    - [ ] Add 4 to r0
+    - [ ] Branch back to loop
+    - [ ] Create done label
+- [ ] Call main() using bl
+- [ ] Infinite loop at the end using b .
