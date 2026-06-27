@@ -1,6 +1,4 @@
-# Phase 0
-
-## Notes
+# Phase 0: Bootloader
 
 ### The Whole Pipeline
 ```
@@ -127,16 +125,16 @@ SECTIONS {
 - [x] Switch to Thumb mode using ldr and bx
 - [x] Disable interrupts using cpsid
 - [x] Load stack pointer to 0x80010000
-- [ ] Clear BSS section with a loop:
-    - [ ] Load __bss_start__ into r0
-    - [ ] Load __bss_end__ into r1
-    - [ ] Move 0 into r2
-    - [ ] Create a loop label
-    - [ ] Compare r0 and r1
-    - [ ] Branch if equal to done label
-    - [ ] Store r2 at address in r0
-    - [ ] Add 4 to r0
-    - [ ] Branch back to loop
-    - [ ] Create done label
-- [ ] Call main() using bl
-- [ ] Infinite loop at the end using b .
+- [x] Clear BSS section with a loop:
+    - [x] Load __bss_start__ into r0
+    - [x] Load __bss_end__ into r1
+    - [x] Move 0 into r2
+    - [x] Create a loop label
+    - [x] Compare r0 and r1
+    - [x] Branch if equal to done label
+    - [x] Store r2 at address in r0
+    - [x] Add 4 to r0
+    - [x] Branch back to loop
+    - [x] Create done label
+- [x] Call main() using bl
+- [x] Infinite loop at the end using b .
