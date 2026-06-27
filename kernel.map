@@ -14,58 +14,58 @@ RAM              0x80000000         0x00000000         xrw
 Linker script and memory map
 
 
-.text           0x00080000        0xc
+.text           0x00080000       0x3c
  *(.text.boot)
- .text.boot     0x00080000        0x4 src/bootloader/bootloader.o
+ .text.boot     0x00080000       0x34 src/bootloader/bootloader.o
                 0x00080000                _start
  *(.text)
- .text          0x00080004        0x0 src/bootloader/bootloader.o
- .text          0x00080004        0x8 src/kernel/kernel.o
-                0x00080004                uart_init
-                0x00080008                uart_puts
+ .text          0x00080034        0x0 src/bootloader/bootloader.o
+ .text          0x00080034        0x8 src/kernel/kernel.o
+                0x00080034                uart_init
+                0x00080038                uart_puts
  *(.rodata)
 
-.rodata.str1.4  0x0008000c       0x11
+.rodata.str1.4  0x0008003c       0x11
  .rodata.str1.4
-                0x0008000c       0x11 src/kernel/kernel.o
+                0x0008003c       0x11 src/kernel/kernel.o
 
-.glue_7         0x00080020        0x0
- .glue_7        0x00080020        0x0 linker stubs
+.glue_7         0x00080050        0x0
+ .glue_7        0x00080050        0x0 linker stubs
 
-.glue_7t        0x00080020        0x0
- .glue_7t       0x00080020        0x0 linker stubs
+.glue_7t        0x00080050        0x0
+ .glue_7t       0x00080050        0x0 linker stubs
 
-.vfp11_veneer   0x00080020        0x0
- .vfp11_veneer  0x00080020        0x0 linker stubs
+.vfp11_veneer   0x00080050        0x0
+ .vfp11_veneer  0x00080050        0x0 linker stubs
 
-.v4_bx          0x00080020        0x0
- .v4_bx         0x00080020        0x0 linker stubs
+.v4_bx          0x00080050        0x0
+ .v4_bx         0x00080050        0x0 linker stubs
 
-.text.startup   0x00080020       0x20
- .text.startup  0x00080020       0x20 src/kernel/kernel.o
-                0x00080020                main
+.iplt           0x00080050        0x0
+ .iplt          0x00080050        0x0 src/bootloader/bootloader.o
 
-.iplt           0x00080040        0x0
- .iplt          0x00080040        0x0 src/kernel/kernel.o
+.text.startup   0x00080050       0x20
+ .text.startup  0x00080050       0x20 src/kernel/kernel.o
+                0x00080050                main
 
-.rel.dyn        0x00080040        0x0
- .rel.iplt      0x00080040        0x0 src/kernel/kernel.o
+.rel.dyn        0x00080070        0x0
+ .rel.iplt      0x00080070        0x0 src/bootloader/bootloader.o
 
-.data           0x00080040        0x0
+.data           0x00080070        0x0
  *(.data)
- .data          0x00080040        0x0 src/bootloader/bootloader.o
- .data          0x00080040        0x0 src/kernel/kernel.o
+ .data          0x00080070        0x0 src/bootloader/bootloader.o
+ .data          0x00080070        0x0 src/kernel/kernel.o
 
-.igot.plt       0x00080040        0x0
- .igot.plt      0x00080040        0x0 src/kernel/kernel.o
+.igot.plt       0x00080070        0x0
+ .igot.plt      0x00080070        0x0 src/bootloader/bootloader.o
 
-.bss            0x00080040        0x0
-                0x00080040                        __bss_start__ = .
+.bss            0x00080070        0x0
+                0x00080070                        __bss_start__ = .
  *(.bss)
- .bss           0x00080040        0x0 src/bootloader/bootloader.o
- .bss           0x00080040        0x0 src/kernel/kernel.o
+ .bss           0x00080070        0x0 src/bootloader/bootloader.o
+ .bss           0x00080070        0x0 src/kernel/kernel.o
  *(COMMON)
-                0x00080040                        __bss_end__ = .
+                0x00080070                        __bss_end__ = .
 LOAD src/bootloader/bootloader.o
 LOAD src/kernel/kernel.o
 OUTPUT(kernel.elf elf32-littlearm)

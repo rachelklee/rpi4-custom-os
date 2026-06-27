@@ -57,6 +57,23 @@ kernel8.img → copied to Pi → GPU loads at 0x80000 → CPU executes
     4. Clear BSS (Block Started by Symbol), initizialize and zero out global variables and registers
     5. call main (`bl main`), return address stores in lr
 * bootloader runs in supervisor mode (as opposed to user mode) to have full access
+* .thumb
+    * load the address of the first label (the one you want in .thumb) forward plus 1 into register and branch to address in register
+        *  why plus 1? +1 is for the CPU mode flag. ARM CPUs use the lowed bid of address to determin execution mode
+            * Bit 0 = 0 (even address) runs in ARM mode with 32 bit instructions
+            * Bit 0 = 1 (odd address) runs in Thumb mode with 16 bit instructions
+            * EXAMPLE: 
+            ```
+            Address 0x8000C in binary: ...11000 (lowest bit is 0 = ARM mode)
+            Address 0x8000D in binary: ...11001 (lowest bit is 1 = Thumb mode)
+
+            0x8000D = 0x8000C + 1 
+            so...
+            ldr r0, = 1f + 1 ; loads 0x8000D into r0
+            bx r0 ; jump to r0 (0x8000D), CPU checks lowest bit of 0x8000D which is 1 so CPU switches in Thumb mode --> exeuct instructio nat address 0x8000C in Thumb encoding
+
+            the instruction at label 1 is actually at address 0x8000C but if you jump to 0x8000D the odd address switches to THumb mode but executes code at 0x8000C
+            ```
 
 ## The Linker Script
 * tells the linker where to place code in memory
@@ -103,13 +120,13 @@ SECTIONS {
     * when you compile, compiler doesn't store the values for the variables in the executable but it reserves space in memory for the variable, it contains garbage data when program initially loads
     * bootloader needs to zero out the garbage so programmer doesn't need to
 
-## Checklist
+## Objectives
 
-- [ ] Start with .section and .global directives
-- [ ] Create _start: label
-- [ ] Switch to Thumb mode using ldr and bx
-- [ ] Disable interrupts using cpsid
-- [ ] Load stack pointer to 0x80010000
+- [x] Start with .section and .global directives
+- [x] Create _start: label
+- [x] Switch to Thumb mode using ldr and bx
+- [x] Disable interrupts using cpsid
+- [x] Load stack pointer to 0x80010000
 - [ ] Clear BSS section with a loop:
     - [ ] Load __bss_start__ into r0
     - [ ] Load __bss_end__ into r1
