@@ -26,12 +26,12 @@ This produces `kernel8.img` — the bootloader + kernel binary.
 
 ## Project Phases
 
-- [ ] **Phase 1:** Bootloader + minimal kernel (current)
-- [ ] **Phase 2:** UART driver + serial output
-- [ ] **Phase 3:** Task scheduler + multitasking
-- [ ] **Phase 4:** BLE protocol handler
-- [ ] **Phase 5:** MCP server for Claude
-- [ ] **Phase 6:** Integration + documentation
+- [x] **Phase 0:** Bootloader + minimal kernel
+- [ ] **Phase 1:** UART driver + serial output
+- [ ] **Phase 2:** Task scheduler + multitasking
+- [ ] **Phase 3:** BLE protocol handler
+- [ ] **Phase 4:** MCP server for Claude
+- [ ] **Phase 5:** Integration + documentation
 
 ## Files
 
