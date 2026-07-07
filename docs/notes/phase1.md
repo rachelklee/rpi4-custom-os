@@ -71,6 +71,15 @@ Your Mac serial console
 * kernel.c calls uart_iit() at tartup, uses uart_puts() for all kernel related outputs
 * BCM2711 ARM Peripherals Datasheet
     * GPIO
+        * TL;DR --> physical GPIO pins (GPIO#, 0-53) are controlled by a GPFSEL register by an assigned 3 bit range
+            * Physical GPIO Pins
+                * just wires until you tell them what to do
+            * GPFSEL register
+                * configure each pin (using 3 bit code) to tell bit what to do (input, output, alternate function)
+            * GPSET/CPCLR
+                * drive pin HIGH or LOW 
+            * GPLEV
+                * read voltage on pin
         * ![GPIO Block Diagram](GPIO_block_diagram.png)
             * this diagram shows how a single GPIO pin works and how software can control a pin/what features are available
             * what can a pin do:
@@ -135,7 +144,7 @@ Your Mac serial console
                     RISING_EDGE_DETECTED = 0; // clear flag
                 }
                 ```
-        * GPIO 14 and 15 are set for UART
+        * GPIO 14 and 15 are set for UART (GPFSEL = GPIO Function Select)
             ```
             GPFSEL1[14:12] = 1 // GPIO 14, alternate function (UART TX, transmit)
             GPFSEL1[17:15] = 1 // GPIO 15, alternate function (UART RX, receive)
@@ -149,11 +158,11 @@ Your Mac serial console
             | Register | Offset | Controls|
             | :--- | :---: | ---: |
             | GPFSEL0 | 0x00 | GPIO 0-9 (3 bits each) |
-            | GFSEL1 | 0x04 | GPIO 10-19 (3 bits each) | 
-            | GFSEL2 | 0x08 | GPIO 20-29 (3 bits each) |
-            | GFSEL3 | 0x0C | GPIO 30-39 (3 bits each) |
-            | GFSEL4 | 0x10 | GPIO 40-49 (3 bits each) |
-            | GFSEL5 | 0x14 | GPIO 50-53 (3 bits each) |
+            | GPFSEL1 | 0x04 | GPIO 10-19 (3 bits each) | 
+            | GPFSEL2 | 0x08 | GPIO 20-29 (3 bits each) |
+            | GPFSEL3 | 0x0C | GPIO 30-39 (3 bits each) |
+            | GPFSEL4 | 0x10 | GPIO 40-49 (3 bits each) |
+            | GPFSEL5 | 0x14 | GPIO 50-53 (3 bits each) |
             * each GPIO pin uses 3 bits in its GPFSEL register
             ```
             000 = GPIO input
@@ -165,11 +174,103 @@ Your Mac serial console
             010 = Alternate function 4 (ALT5)
             ```
             * EXAMPLE: GPIO 14 is controlled by bits [14:12] of GPFSEL1, `GPFSEL1[14:12] = 100 (bin) = 4 (dec) = ALT0 (UART TX)`
-            
+            * for a 32 bit register:
+                ```
+                GPFSEL1 controls GPIO 10-19:
+                Bits [2:0]   = GPIO 10 function
+                Bits [5:3]   = GPIO 11 function
+                Bits [8:6]   = GPIO 12 function
+                Bits [11:9]  = GPIO 13 function
+                Bits [14:12] = GPIO 14 function  ← This one
+                Bits [17:15] = GPIO 15 function  ← And this one
+                Bits [20:18] = GPIO 16 function
+                Bits [23:21] = GPIO 17 function
+                Bits [26:24] = GPIO 18 function
+                Bits [29:27] = GPIO 19 function
+                ```
+            * to do this create a pointer to GPFSEL1 register and edit current value using bit arithmetic (read current value, clear bits to write to, set bits to write to), write back to register
+            * To set register output use `GPSET`, to clear register output use `GPCLR`, to read register state use `GPLEV`, to check for event status use `GPEDS`, to check for rising edge `GPREN`, to check for falling edge use `GPFEN`
+                * GPSET/CLR/LEV/EDS/REN/FEN0 is for GPIO 0-31
+                * GPSET/CLR/LEV/EDS/REN/FEN1 is for GPIO 32-53
+            * for async edge detection use `GPAREN`, faster because it doesn't wait for clock synchronization but it is less stable (good for fast responses liek button presses)
+                ```
+                GPAREN0     0x7C    Async rising edge on GPIO 0-31
+                GPAREN1     0x80    Async rising edge on GPIO 32-53
+                GPAFEN0     0x88    Async falling edge on GPIO 0-31
+                GPAFEN1     0x8C    Async falling edge on GPIO 32-53
+                ```
+            * GPIO Pull-Up/Pull-Down Control Registers
+                ```
+                GPIO_PUP_PDN_CNTRL_REG0     0xE4    GPIO 0-15 pull-up/pull-down
+                GPIO_PUP_PDN_CNTRL_REG1     0xE8    GPIO 16-31 pull-up/pull-down
+                GPIO_PUP_PDN_CNTRL_REG2     0xEC    GPIO 32-47 pull-up/pull-down
+                GPIO_PUP_PDN_CNTRL_REG3     0xF0    GPIO 48-53 pull-up/pull-down
+                ```
+                * each GPIO uses 2 bits (00 = No pull, 01 = Pull down, 10 = Pull up, 11 = Reserved)
+                * pull up resistor connects the pin to 3.3V through a resistor
+                * pull down resistor connects the pin to GND 0.0V through a resistor
+                * only needed for floating
 
+    * UART Initialization Sequence
+        * Disable GPIO Pull-Up/Pull-Down on UART Pins (GPIO 14/15)
+            * read GPIO_PUP_PDN_CNTRL_REG1 (0x3F2000E8)
+                * for GPIO 14: bits [29:28]
+                * for GPIO 15: bits [31:30]
+                * set to 00 (no pull up/down)
+            * write back
+        * configure GPIO 14/15 Alternate Function
+            * GPIO 14/15 pins are controlled by GPFSEL1 register
+            * read GPFSEL1 (address 0x3F200004)
+                * GPIO 14 on bits [14:12]
+                * GPIO 15 on bits [17:15]
+            * clear bits [14:12] and [17:15]
+            * set bits to 100 (binary) which is 4 (decimal) or ALT0
+                * GPIO 14: ALT0 (UART0 TX) and ALT5 (UART1 TX)
+                * GPIO 15: ALT0 (UART0 RX) and ALT5 (UART1 RX)
+        * UART hardware now controls GPIO 14and 15
 
-    * UART
+    * UART Registers
+        * UART_BASE = 0x3F201000
+            ```
+            UARTDR   (0x3F201000 + 0x00)  = Data Register
+            UARTFR   (0x3F201000 + 0x18)  = Flag Register
+            UARTIBRD (0x3F201000 + 0x24)  = Integer Baud Rate Divisor
+            UARTFBRD (0x3F201000 + 0x28)  = Fractional Baud Rate Divisor
+            UARTLCR_H (0x3F201000 + 0x2C) = Line Control Register
+            UARTICR  (0x3F201000 + 0x30)  = Control Register
+            UARTIMSC (0x3F201000 + 0x38)  = Interrupt Mask Register
+            ```
+        * UARTDR (Data Register): send (write) and receive (read) byte over UART
+        * UARTFR (Flag Register): bit 6 is TXFE (transmit FIFO empty) which is checked before sending and bit 5 is FXFF (receive FIFO full) which is checked before receiving. There is also a status flag
+        * UARTIBRD & UARTFBRD (Baud Rate): sets the transmission rate (bits per second). For 115200 baud IBRD=26 and FBRD=3. IBRD=Integer part and FBRD=Fractional part
+            * `Baud Rate = Clock Frequency / (16 * Divisor)`
+            * Example:
+                ```
+                For 115200 baud on Pi 4
+                Clock frequency 48 MHz = 48000000 Hz --> desired baud rate: 115200 bps
 
+                Formula:
+                Divisor = Clock Frequency / (16 * Baud Rate)
+                Divisor = 48000000 / (16 * 115200)
+                Divisor = 26.0434
+
+                IBRD = 26
+                FBRD = 0.0434 * 64 = 2.78 ≈ 3
+                ```
+        * UARTLCR_H (Line Control): Bits [6:5] determine word length (up to 11=8 bits), bit 4 enables FIFO, bit 3 is stop bits, bit 1 is parity. Line Control is how to send
+            * Example: Send 8-bit characters with 1 stop bit, no parity, FIFO enabled
+                ```
+                01110000
+                ││││││└─ BRK = 0 (don't send break)
+                │││││├─ PEN = 0 (no parity)
+                ││││├── EPS = 0 (even parity, doesn't matter)
+                │││├─── STP2 = 0 (1 stop bit)
+                ││├──── FEN = 1 (FIFO enabled)
+                ├─ WLEN = 11 (8-bit words)
+                └─ SPS = 0 (stick parity, doesn't matter)
+                ```
+        * UARTICR (Control): Bit 0 is UART enable, bit 8 is TX enable, bit 9 is RX enable, Control is whether to send (is UART on or off)
+        * UARTIMSC (Interrupt Mask): 0 to disable interrupts, 1 to enable
 
 ### What registers need to be configured
 * To implement UART
