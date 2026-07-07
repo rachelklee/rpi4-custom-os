@@ -3,19 +3,24 @@
 
 // define register addresses
 // use volatile when accessing hardware registers to prevent optimizations
-#define GPIO_PUP_PDN_CNTRL_REG0 (volatile uint32_t *)(UART_BASE + 0xE4)
-#define GPIO14 14
-#define GPIO15 15
 
-#define UARTIMSC (*(volatile uint32_t *)(UART_BASE + 0x38))
+// bases
+#define UART_BASE 0x3F201000
+#define GPIO_BASE 0x3F200000
 
-#define UART_BASE (volatile uint32_t *)0x3F201000
+// gpio registers
+#define GPIO_PUP_PDN_CNTRL_REG0 (GPIO_BASE + 0xE4)
+#define GPFSEL1 (GPIO_BASE + 0x04)
+
+// uart registers
+#define UARTIMSC (UART_BASE + 0x38)
+
 #define UART_BAUD_RATE 115200
-#define UARTIBRD (*(volatile uint32_t *)(UART_BASE + 0x24))
-#define UARTFBRD (*(volatile uint32_t *)(UART_BASE + 0x28))
+#define UARTIBRD (UART_BASE + 0x24)
+#define UARTFBRD (UART_BASE + 0x28)
 
-#define UARTLCRH (*(volatile uint32_t *)(UART_BASE + 0x2C))
-#define UARTCR (*(volatile uint32_t *)(UART_BASE + 0x30))
+#define UARTLCR_H (UART_BASE + 0x2C)
+#define UARTICR (UART_BASE + 0x30)
 
 // implement uart_init, uart_putc, and uart_puts functions
 
@@ -29,9 +34,20 @@ void uart_init(void) {
     // cast to a volatile pointer (inside parenthesis), dereference pointer (outside asterisk)
     volatile uint32_t pupPdnCntrlRegVal = *(volatile uint32_t *)GPIO_PUP_PDN_CNTRL_REG0;
     pupPdnCntrlRegVal &= 0b00001111111111111111111111111111;
-    *GPIO_PUP_PDN_CNTRL_REG0 = pupPdnCntrlRegVal;
+    *(volatile uint32_t *)GPIO_PUP_PDN_CNTRL_REG0 = pupPdnCntrlRegVal;
 
-    
+    volatile uint32_t gpfsel1Val = *(volatile uint32_t *)GPFSEL1;
+    gpfsel1Val &= 0b11111111111111000000111111111111;
+    gpfsel1Val |= 0b00000000000000100100000000000000;
+    *(volatile uint32_t *)GPFSEL1 = gpfsel1Val;
+
+    *(volatile uint32_t *)UARTIMSC = 0x0;
+
+    *(volatile uint32_t *)UARTIBRD = 26;
+    *(volatile uint32_t *)UARTFBRD = 3;
+
+    *(volatile uint32_t *)UARTLCR_H = 0b01110000;
+    *(volatile uint32_t *)UARTICR = 0b1100000001;
 }
 
 void uart_putc(char c) {
@@ -39,5 +55,5 @@ void uart_putc(char c) {
 } 
 
 void uart_puts(const char *s) {
-
+    
 }
