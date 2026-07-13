@@ -50,10 +50,15 @@ void uart_init(void) {
     *(volatile uint32_t *)UARTICR = 0b1100000001;
 }
 
+// send one character
+// 1. check if UART is ready (UARTFR bit 6)
+// 2. wait if not ready
+// 3. send character when ready (write to UARTDR)
 void uart_putc(char c) {
 
 } 
 
+
 void uart_puts(const char *s) {
-    
+
 }
