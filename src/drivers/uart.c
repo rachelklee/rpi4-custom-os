@@ -22,6 +22,9 @@
 #define UARTLCR_H (UART_BASE + 0x2C)
 #define UARTICR (UART_BASE + 0x30)
 
+#define UARTFR (UART_BASE + 0x18)
+#define UARTDR (UART_BASE)
+
 // implement uart_init, uart_putc, and uart_puts functions
 
 // 1. disable pull-up/pull-down on GPIO 14/15
@@ -56,9 +59,23 @@ void uart_init(void) {
 // 3. send character when ready (write to UARTDR)
 void uart_putc(char c) {
 
+    while (((*(volatile uint32_t *)UARTFR) & (1 << 6)) == 0 ) {
+        // wait for UART to be ready
+    }
+
+    *(volatile uint32_t *)UARTDR = c; 
 } 
 
 
 void uart_puts(const char *s) {
 
+    while (*s != '\0') {
+        
+        if (*s == '\n') {
+            uart_putc('\r');
+        }
+
+        uart_putc(*s);
+        ++s;
+    }
 }
