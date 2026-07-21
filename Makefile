@@ -13,8 +13,8 @@ LDFLAGS = -T linker.ld -Map kernel.map
 all: kernel8.img
 
 # Link bootloader + kernel
-kernel.elf: src/bootloader/bootloader.o src/kernel/kernel.o
-	$(LD) $(LDFLAGS) -o kernel.elf src/bootloader/bootloader.o src/kernel/kernel.o
+kernel.elf: src/bootloader/bootloader.o src/kernel/kernel.o src/drivers/uart.o
+	$(LD) $(LDFLAGS) -o kernel.elf src/bootloader/bootloader.o src/kernel/kernel.o src/drivers/uart.o
 
 # Convert to binary image
 kernel8.img: kernel.elf
@@ -29,6 +29,10 @@ src/bootloader/bootloader.o: src/bootloader/bootloader.s
 src/kernel/kernel.o: src/kernel/kernel.c
 	$(CC) $(CFLAGS) -c src/kernel/kernel.c -o src/kernel/kernel.o
 
+# Compile UART
+src/drivers/uart.o: src/drivers/uart.c src/drivers/uart.h
+	$(CC) $(CFLAGS) -c src/drivers/uart.c -o src/drivers/uart.o
+
 # Debug: show disassembly
 disasm: kernel.elf
 	$(OBJDUMP) -d kernel.elf | head -100
@@ -40,7 +44,7 @@ symbols: kernel.elf
 # Clean
 clean:
 	rm -f kernel.elf kernel8.img kernel.map
-	rm -f src/bootloader/*.o src/kernel/*.o
+	rm -f src/bootloader/*.o src/kernel/*.o src/drivers/*.o
 	@echo "✓ Cleaned"
 
 .PHONY: all clean disasm symbols

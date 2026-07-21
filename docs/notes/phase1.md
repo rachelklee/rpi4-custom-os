@@ -7,8 +7,8 @@
     * prints debug messages to terminal 
     * allows visibility into what OS is doing
 * protocol for sending/receiving data one byte at a time over two wires
-    * TX (transmit) --> send data from Pi to MAC
-    * RX (receive) --> receive dat from Pi to MAC
+    * TX (transmit) &rarr; send data from Pi to MAC
+    * RX (receive) &rarr; receive dat from Pi to MAC
 * for Pi 4: UART0 is main serial port, TX on GPIO 14 (pin 8), RX on GPIO 15 (pin 10), baud rate is 115200 bits/second
     * baud rate is the speed of communication, how many bits per second you ucan send over the wire
     * example:  

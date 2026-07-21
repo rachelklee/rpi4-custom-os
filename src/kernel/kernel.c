@@ -13,12 +13,3 @@ int main(void) {
     
     return 0;
 }
-
-void uart_init(void) {
-    /* TODO: Initialize UART */
-}
-
-void uart_puts(const char *s) {
-    /* TODO: Send string to UART */
-    (void)s;
-}
