@@ -1,4 +1,4 @@
-# Phase 1a: Changing ISA
+# Phase 0a: Changing ISA
 
 _NOTE: After building the OS and developing the UART drivers I proceeded to test the UART functionality. I was receiving no output from UART SERIAL and realized that there was a config mismatch caused by the bootloader being written in ARM32 (AArch 32) instead of ARM64 (AArch 64)_
 
