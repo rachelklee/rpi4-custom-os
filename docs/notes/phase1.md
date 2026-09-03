@@ -80,7 +80,7 @@ Your Mac serial console
                 * drive pin HIGH or LOW 
             * GPLEV
                 * read voltage on pin
-        * ![GPIO Block Diagram](GPIO_block_diagram.png)
+        * ![GPIO Block Diagram](../ref/GPIO_block_diagram.png)
             * this diagram shows how a single GPIO pin works and how software can control a pin/what features are available
             * what can a pin do:
                 * be an input (read voltage from external circuit)
